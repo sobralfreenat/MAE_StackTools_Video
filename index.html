@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sites Embebidos com Stack Tools</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* Fonte padrão */
+            margin: 20px; /* Margem da página */
+            background-color: #f4f7f9; /* Cor de fundo suave */
+            color: #333; /* Cor do texto */
+        }
+        .iframe-container {
+            margin-bottom: 20px; /* Espaçamento entre os iframes */
+            position: relative; /* Para posicionar o redimensionador */
+            cursor: move; /* Cursor de arrastar */
+            display: inline-block; /* Permite que o redimensionamento funcione corretamente */
+            border: 1px solid #ddd; /* Borda leve */
+            border-radius: 8px; /* Bordas arredondadas */
+            background-color: #ffffff; /* Fundo branco para o iframe */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+            width: 100%; /* Largura total */
+            max-width: 800px; /* Largura máxima */
+            height: 500px; /* Altura padrão */
+        }
+        iframe {
+            width: 100%; /* Largura do iframe */
+            height: 100%; /* Altura do iframe */
+            border: none; /* Sem borda no iframe */
+            border-radius: 8px; /* Bordas arredondadas no iframe */
+        }
+        .iframe-selected {
+            border: 2px solid #007BFF; /* Borda diferenciada para o site selecionado */
+        }
+        .resizer {
+            width: 10px;
+            height: 10px;
+            background: #007BFF;
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            cursor: se-resize; /* Cursor de redimensionamento */
+        }
+        .controls {
+            margin-top: 10px; /* Espaçamento acima dos controles */
+        }
+        .anchor-buttons {
+            position: fixed; /* Fixa os botões na tela */
+            right: 20px; /* Distância da borda direita */
+            top: 20px; /* Distância do topo */
+            background-color: #ffffff; /* Cor de fundo */
+            padding: 15px; /* Espaçamento interno */
+            border: 1px solid #007BFF; /* Borda azul */
+            border-radius: 8px; /* Bordas arredondadas */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
+        }
+        .anchor-buttons button {
+            display: block; /* Cada botão em uma nova linha */
+            margin-bottom: 10px; /* Espaçamento entre os botões */
+            padding: 10px; /* Espaçamento interno */
+            color: #fff; /* Cor do texto */
+            border: none; /* Sem borda */
+            border-radius: 5px; /* Bordas arredondadas */
+            cursor: pointer; /* Cursor de ponteiro */
+            background-color: #007BFF; /* Azul para os botões */
+            transition: background-color 0.3s, transform 0.2s; /* Transições suaves */
+        }
+        .anchor-buttons button:hover {
+            background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
+            transform: scale(1.05); /* Leve aumento ao passar o mouse */
+        }
+    </style>
+    <script>
+        let sites = [
+            { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'FN' },
+            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'MG' },
+            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'DT' },
+            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'ME' }
+        ];
+
+        function adjustSize(iframeId) {
+            const iframe = document.getElementById(iframeId);
+            const width = document.getElementById(iframeId + '-width').value;
+            const height = document.getElementById(iframeId + '-height').value;
+            iframe.style.width = width + 'px';
+            iframe.style.height = height + 'px';
+        }
+
+        function adjustGeneralWidth(value) {
+            document.getElementById('general-width-value').textContent = value; // Atualiza o valor exibido
+            sites.forEach(site => {
+                document.getElementById(site.id + '-width').value = value;
+                adjustSize(site.id);
+            });
+        }
+
+        function highlightIframe(iframeId) {
+            // Remove a classe de destaque de todos os iframes
+            sites.forEach(site => {
+                const iframe = document.getElementById(site.id);
+                iframe.classList.remove('iframe-selected');
+            });
+            // Adiciona a classe de destaque ao iframe selecionado
+            const selectedIframe = document.getElementById(iframeId);
+            selectedIframe.classList.add('iframe-selected');
+        }
+
+        function saveData() {
+            const data = sites.map(site => ({
+                id: site.id,
+                url: site.url,
+                initials: site.initials
+            }));
+            const json = JSON.stringify(data);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sites.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function loadData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    sites = JSON.parse(e.target.result);
+                    updateIframes();
+                    updateMenu();
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function makeResizable(element) {
+            const resizer = document.createElement('div');
+            resizer.classList.add('resizer');
+            element.appendChild(resizer);
+
+            resizer.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                window.addEventListener('mousemove', resize);
+                window.addEventListener('mouseup', stopResize);
+            });
+
+            function resize(e) {
+                const iframe = element.querySelector('iframe');
+                const newWidth = e.clientX - element.getBoundingClientRect().left;
+                const newHeight = e.clientY - element.getBoundingClientRect().top;
+                iframe.style.width = newWidth + 'px';
+                iframe.style.height = newHeight + 'px';
+                document.getElementById(element.id + '-width').value = newWidth;
+                document.getElementById(element.id + '-height').value = newHeight;
+            }
+
+            function stopResize() {
+                window.removeEventListener('mousemove', resize);
+                window.removeEventListener('mouseup', stopResize);
+            }
+        }
+
+        function makeDraggable(element) {
+            let offsetX, offsetY;
+
+            element.addEventListener('mousedown', function(e) {
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+                window.addEventListener('mousemove', drag);
+                window.addEventListener('mouseup', stopDrag);
+            });
+
+            function drag(e) {
+                element.style.left = e.clientX - offsetX + 'px';
+                element.style.top = e.clientY - offsetY + 'px';
+            }
+
+            function stopDrag() {
+                window.removeEventListener('mousemove', drag);
+                window.removeEventListener('mouseup', stopDrag);
+            }
+        }
+
+        function updateIframes() {
+            const container = document.getElementById('iframe-container');
+            container.innerHTML = ''; // Limpa o contêiner antes de adicionar os iframes
+            sites.forEach(site => {
+                const iframeContainer = document.createElement('div');
+                iframeContainer.className = 'iframe-container';
+                iframeContainer.id = site.id;
+
+                const iframe = document.createElement('iframe');
+                iframe.src = site.url;
+                iframe.title = `Site ${site.initials}`;
+
+                const controls = document.createElement('div');
+                controls.className = 'controls';
+
+                const widthInput = document.createElement('input');
+                widthInput.type = 'number';
+                widthInput.id = `${site.id}-width`;
+                widthInput.value = 400;
+                widthInput.onchange = () => adjustSize(site.id);
+                controls.appendChild(document.createTextNode('Largura (px):'));
+                controls.appendChild(widthInput);
+                controls.appendChild(document.createElement('br'));
+
+                const heightInput = document.createElement('input');
+                heightInput.type = 'number';
+                heightInput.id = `${site.id}-height`;
+                heightInput.value = 500;
+                heightInput.onchange = () => adjustSize(site.id);
+                controls.appendChild(document.createTextNode('Altura (px):'));
+                controls.appendChild(heightInput);
+                controls.appendChild(document.createElement('br'));
+
+                const display = document.createElement('span');
+                display.id = `${site.id}-display`;
+                display.textContent = site.initials;
+                controls.appendChild(display);
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Editar';
+                editButton.onclick = () => editSite(site.id);
+                controls.appendChild(editButton);
+
+                iframeContainer.appendChild(iframe);
+                iframeContainer.appendChild(controls);
+                container.appendChild(iframeContainer);
+
+                makeResizable(iframeContainer);
+                makeDraggable(iframeContainer);
+            });
+        }
+
+        function editSite(id) {
+            const site = sites.find(site => site.id === id);
+            const newUrl = prompt('Digite a nova URL:', site.url);
+            const newInitials = prompt('Digite a nova síntese do nome:', site.initials);
+            
+            if (newUrl) site.url = newUrl;
+            if (newInitials) site.initials = newInitials;
+
+            updateIframes();
+            updateMenu();
+        }
+
+        function addSite(url, initials) {
+            const newId = `iframe${sites.length + 1}`;
+            sites.push({ id: newId, url: url, initials: initials });
+            updateIframes();
+            updateMenu();
+        }
+
+        function updateMenu() {
+            const menu = document.querySelector('.anchor-buttons');
+            menu.innerHTML = '<h3>Stack Tools</h3>'; // Limpa o menu
+            sites.forEach(site => {
+                const button = document.createElement('button');
+                button.textContent = `Ir para ${site.initials}`;
+                button.onclick = () => {
+                    highlightIframe(site.id);
+                    const iframe = document.getElementById(site.id);
+                    iframe.scrollIntoView({ behavior: 'smooth' });
+                };
+                menu.appendChild(button);
+            });
+            const addButton = document.createElement('button');
+            addButton.textContent = 'Adicionar Página';
+            addButton.onclick = () => {
+                const url = prompt('Digite a URL da nova página:');
+                const initials = prompt('Digite a síntese do nome:');
+                if (url && initials) {
+                    addSite(url, initials);
+                }
+            };
+            menu.appendChild(addButton);
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Salvar Dados';
+            saveButton.onclick = saveData;
+            menu.appendChild(saveButton);
+            const loadButton = document.createElement('button');
+            loadButton.textContent = 'Carregar Dados';
+            loadButton.onclick = () => document.getElementById('file-input').click();
+            menu.appendChild(loadButton);
+        }
+
+        window.onload = function() {
+            updateIframes(); // Atualiza os iframes ao carregar
+            updateMenu(); // Atualiza o menu ao carregar
+            sites.forEach(site => {
+                const container = document.getElementById(site.id).parentElement;
+                makeResizable(container);
+                makeDraggable(container);
+            });
+            makeDraggable(document.querySelector('.anchor-buttons')); // Torna o menu arrastável
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'file-input';
+            fileInput.style.display = 'none'; // Esconde o input de arquivo
+            fileInput.accept = '.json';
+            fileInput.addEventListener('change', loadData);
+            document.body.appendChild(fileInput); // Adiciona o input ao corpo
+        };
+    </script>
+</head>
+<body>
+    <h1>Sites Embebidos com Stack Tools</h1>
+
+    <label for="general-width-slider">Ajustar Largura Geral:</label>
+    <input type="range" id="general-width-slider" min="100" max="1000" value="400" oninput="adjustGeneralWidth(this.value)">
+    <span id="general-width-value">400</span> px
+
+    <div class="anchor-buttons">
+        <h3>Stack Tools</h3>
+        <button onclick="updateIframes()">Atualizar Iframes</button>
+        <button onclick="saveData()">Salvar Dados</button>
+        <button onclick="document.getElementById('file-input').click()">Carregar Dados</button>
+        <button onclick="addSite(prompt('Digite a URL da nova página:'), prompt('Digite a síntese do nome:'))">Adicionar Página</button>
+    </div>
+
+    <div id="iframe-container" class="vertical"> <!-- Contêiner para os iframes -->
+        <div class="iframe-container" id="site1">
+            <iframe id="iframe1" src="https://sobralfreenat.github.io/FNW_MAE/" title="Site 1"></iframe>
+            <div class="controls">
+                <label for="iframe1-width">Largura (px):</label>
+                <input type="number" id="iframe1-width" value="400" onchange="adjustSize('iframe1')"><br>
+                <label for="iframe1-height">Altura (px):</label>
+                <input type="number" id="iframe1-height" value="500" onchange="adjustSize('iframe1')"><br>
+                <span id="iframe1-display">FN</span>
+                <button onclick="editSite('iframe1')">Editar</button>
+            </div>
+        </div>
+
+        <div class="iframe-container" id="site2">
+            <iframe id="iframe2" src="https://sobralfreenat.github.io/mae_prompt_generator/" title="Site 2"></iframe>
+            <div class="controls">
+                <label for="iframe2-width">Largura (px):</label>
+                <input type="number" id="iframe2-width" value="400" onchange="adjustSize('iframe2')"><br>
+                <label for="iframe2-height">Altura (px):</label>
+                <input type="number" id="iframe2-height" value="500" onchange="adjustSize('iframe2')"><br>
+                <span id="iframe2-display">MG</span>
+                <button onclick="editSite('iframe2')">Editar</button>
+            </div>
+        </div>
+
+        <div class="iframe-container" id="site3">
+            <iframe id="iframe3" src="https://sobralfreenat.github.io/desafios_e_temas_prompt_text/" title="Site 3"></iframe>
+            <div class="controls">
+                <label for="iframe3-width">Largura (px):</label>
+                <input type="number" id="iframe3-width" value="400" onchange="adjustSize('iframe3')"><br>
+                <label for="iframe3-height">Altura (px):</label>
+                <input type="number" id="iframe3-height" value="500" onchange="adjustSize('iframe3')"><br>
+                <span id="iframe3-display">DT</span>
+                <button onclick="editSite('iframe3')">Editar</button>
+            </div>
+        </div>
+
+        <div class="iframe-container" id="site4">
+            <iframe id="iframe4" src="https://sobralfreenat.github.io/mae-menu-editor/" title="Site 4"></iframe>
+            <div class="controls">
+                <label for="iframe4-width">Largura (px):</label>
+                <input type="number" id="iframe4-width" value="400" onchange="adjustSize('iframe4')"><br>
+                <label for="iframe4-height">Altura (px):</label>
+                <input type="number" id="iframe4-height" value="500" onchange="adjustSize('iframe4')"><br>
+                <span id="iframe4-display">ME</span>
+                <button onclick="editSite('iframe4')">Editar</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
