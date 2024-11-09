@@ -21,7 +21,7 @@
             background-color: #ffffff; /* Fundo branco para o iframe */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra suave */
             width: 100%; /* Largura total */
-            max-width: 800px; /* Largura máxima */
+            max-width: 100vw; /* Largura máxima respeitando a resolução do usuário */
             height: 500px; /* Altura padrão */
         }
         iframe {
@@ -70,14 +70,29 @@
             background-color: #0056b3; /* Azul mais escuro ao passar o mouse */
             transform: scale(1.05); /* Leve aumento ao passar o mouse */
         }
+        .toggle-drag {
+            background-color: #28a745; /* Verde para o botão de ativar drag */
+            color: white; /* Cor do texto */
+            border: none; /* Sem borda */
+            border-radius: 5px; /* Bordas arredondadas */
+            padding: 5px 10px; /* Espaçamento interno */
+            cursor: pointer; /* Cursor de ponteiro */
+            transition: background-color 0.3s; /* Transição suave */
+        }
+        .toggle-drag:hover {
+            background-color: #218838; /* Verde mais escuro ao passar o mouse */
+        }
     </style>
     <script>
         let sites = [
-            { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'FN' },
-            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'MG' },
-            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'DT' },
-            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'ME' }
+            { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'FN', width: 400, height: 500 },
+            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'DT', width: 400, height: 500 },
+            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'MG', width: 400, height: 500 },
+            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'ME', width: 400, height: 500 },
+            { id: 'iframe5', url: 'https://ai.invideo.io/workspace/d68a9be3-5cb3-425f-b79a-c07e9e9bebbf/v20-copilot', initials: 'AI', width: 400, height: 500 }
         ];
+
+        let isDraggable = false; // Estado inicial do arrastável
 
         function adjustSize(iframeId) {
             const iframe = document.getElementById(iframeId);
@@ -110,9 +125,12 @@
             const data = sites.map(site => ({
                 id: site.id,
                 url: site.url,
-                initials: site.initials
+                initials: site.initials,
+                width: document.getElementById(site.id + '-width').value, // Salva a largura
+                height: document.getElementById(site.id + '-height').value // Salva a altura
             }));
-            const json = JSON.stringify(data);
+            const generalWidth = document.getElementById('general-width-slider').value; // Salva a largura geral
+            const json = JSON.stringify({ sites: data, generalWidth: generalWidth });
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -127,8 +145,10 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    sites = JSON.parse(e.target.result);
+                    const result = JSON.parse(e.target.result);
+                    sites = result.sites;
                     updateIframes();
+                    adjustGeneralWidth(result.generalWidth); // Ajusta a largura geral
                     updateMenu();
                 };
                 reader.readAsText(file);
@@ -166,6 +186,7 @@
             let offsetX, offsetY;
 
             element.addEventListener('mousedown', function(e) {
+                if (!isDraggable) return; // Não permite arrastar se não estiver habilitado
                 offsetX = e.clientX - element.getBoundingClientRect().left;
                 offsetY = e.clientY - element.getBoundingClientRect().top;
                 window.addEventListener('mousemove', drag);
@@ -194,6 +215,8 @@
                 const iframe = document.createElement('iframe');
                 iframe.src = site.url;
                 iframe.title = `Site ${site.initials}`;
+                iframe.style.width = site.width + 'px'; // Define a largura
+                iframe.style.height = site.height + 'px'; // Define a altura
 
                 const controls = document.createElement('div');
                 controls.className = 'controls';
@@ -201,8 +224,12 @@
                 const widthInput = document.createElement('input');
                 widthInput.type = 'number';
                 widthInput.id = `${site.id}-width`;
-                widthInput.value = 400;
-                widthInput.onchange = () => adjustSize(site.id);
+                widthInput.value = site.width;
+                widthInput.onchange = () => {
+                    adjustSize(site.id);
+                    // Sincroniza a largura do iframe com a largura do controle
+                    iframe.style.width = widthInput.value + 'px';
+                };
                 controls.appendChild(document.createTextNode('Largura (px):'));
                 controls.appendChild(widthInput);
                 controls.appendChild(document.createElement('br'));
@@ -210,7 +237,7 @@
                 const heightInput = document.createElement('input');
                 heightInput.type = 'number';
                 heightInput.id = `${site.id}-height`;
-                heightInput.value = 500;
+                heightInput.value = site.height;
                 heightInput.onchange = () => adjustSize(site.id);
                 controls.appendChild(document.createTextNode('Altura (px):'));
                 controls.appendChild(heightInput);
@@ -249,7 +276,7 @@
 
         function addSite(url, initials) {
             const newId = `iframe${sites.length + 1}`;
-            sites.push({ id: newId, url: url, initials: initials });
+            sites.push({ id: newId, url: url, initials: initials, width: 400, height: 500 });
             updateIframes();
             updateMenu();
         }
@@ -285,6 +312,22 @@
             loadButton.textContent = 'Carregar Dados';
             loadButton.onclick = () => document.getElementById('file-input').click();
             menu.appendChild(loadButton);
+            const toggleDragButton = document.createElement('button');
+            toggleDragButton.textContent = isDraggable ? 'Desativar Drag' : 'Ativar Drag';
+            toggleDragButton.className = 'toggle-drag';
+            toggleDragButton.onclick = () => {
+                isDraggable = !isDraggable;
+                toggleDragButton.textContent = isDraggable ? 'Desativar Drag' : 'Ativar Drag';
+                sites.forEach(site => {
+                    const iframeContainer = document.getElementById(site.id).parentElement;
+                    if (isDraggable) {
+                        makeDraggable(iframeContainer);
+                    } else {
+                        iframeContainer.onmousedown = null; // Desativa o evento de arrastar
+                    }
+                });
+            };
+            menu.appendChild(toggleDragButton);
         }
 
         window.onload = function() {
@@ -293,7 +336,6 @@
             sites.forEach(site => {
                 const container = document.getElementById(site.id).parentElement;
                 makeResizable(container);
-                makeDraggable(container);
             });
             makeDraggable(document.querySelector('.anchor-buttons')); // Torna o menu arrastável
             const fileInput = document.createElement('input');
@@ -326,49 +368,4 @@
             <iframe id="iframe1" src="https://sobralfreenat.github.io/FNW_MAE/" title="Site 1"></iframe>
             <div class="controls">
                 <label for="iframe1-width">Largura (px):</label>
-                <input type="number" id="iframe1-width" value="400" onchange="adjustSize('iframe1')"><br>
-                <label for="iframe1-height">Altura (px):</label>
-                <input type="number" id="iframe1-height" value="500" onchange="adjustSize('iframe1')"><br>
-                <span id="iframe1-display">FN</span>
-                <button onclick="editSite('iframe1')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site2">
-            <iframe id="iframe2" src="https://sobralfreenat.github.io/mae_prompt_generator/" title="Site 2"></iframe>
-            <div class="controls">
-                <label for="iframe2-width">Largura (px):</label>
-                <input type="number" id="iframe2-width" value="400" onchange="adjustSize('iframe2')"><br>
-                <label for="iframe2-height">Altura (px):</label>
-                <input type="number" id="iframe2-height" value="500" onchange="adjustSize('iframe2')"><br>
-                <span id="iframe2-display">MG</span>
-                <button onclick="editSite('iframe2')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site3">
-            <iframe id="iframe3" src="https://sobralfreenat.github.io/desafios_e_temas_prompt_text/" title="Site 3"></iframe>
-            <div class="controls">
-                <label for="iframe3-width">Largura (px):</label>
-                <input type="number" id="iframe3-width" value="400" onchange="adjustSize('iframe3')"><br>
-                <label for="iframe3-height">Altura (px):</label>
-                <input type="number" id="iframe3-height" value="500" onchange="adjustSize('iframe3')"><br>
-                <span id="iframe3-display">DT</span>
-                <button onclick="editSite('iframe3')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site4">
-            <iframe id="iframe4" src="https://sobralfreenat.github.io/mae-menu-editor/" title="Site 4"></iframe>
-            <div class="controls">
-                <label for="iframe4-width">Largura (px):</label>
-                <input type="number" id="iframe4-width" value="400" onchange="adjustSize('iframe4')"><br>
-                <label for="iframe4-height">Altura (px):</label>
-                <input type="number" id="iframe4-height" value="500" onchange="adjustSize('iframe4')"><br>
-                <span id="iframe4-display">ME</span>
-                <button onclick="editSite('iframe4')">Editar</button>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+                <input type="number" id="iframe1-width" value="400"...
