@@ -12,7 +12,8 @@
             color: #333;
         }
         .iframe-container {
-            margin-bottom: 20px;
+           	margin-top: 50px;
+			margin-bottom: 20px;
             position: relative;
             cursor: move;
             display: inline-block;
@@ -73,15 +74,15 @@
     </style>
     <script>
         let sites = [
-            { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'FN', width: 400, height: 500 },
-            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'DT', width: 400, height: 500 },
-            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'MG', width: 400, height: 500 },
-            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'ME', width: 400, height: 500 },
-            { id: 'iframe6', url: 'https://example.com/site1', initials: 'S1', width: 360, height: 900 },
-            { id: 'iframe7', url: 'https://example.com/site2', initials: 'S2', width: 1000, height: 450 },
-            { id: 'iframe8', url: 'https://example.com/site3', initials: 'S3', width: 360, height: 900 },
-            { id: 'iframe9', url: 'https://example.com/site4', initials: 'S4', width: 1000, height: 450 },
-            { id: 'iframe5', url: 'https://ai.invideo.io/workspace/d68a9be3-5cb3-425f-b79a-c07e9e9bebbf/v20-copilot', initials: 'AI', width: 400, height: 500 }
+            { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'Decoder', width: 374, height: 900 },
+            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'Desafio', width: 440, height: 500 },
+            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'Encoder', width: 500, height: 500 },
+            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'Editor', width: 314, height: 900 },
+            { id: 'iframe6', url: 'https://fnw-assessoria-digital1.odoo.com/', initials: 'FNW Site', width: 995, height: 450 },
+            { id: 'iframe7', url: 'https://freenat-doc.systeme.io/aducation-migrar-assessoria', initials: 'Assessoria1', width: 374, height: 900 },
+            { id: 'iframe8', url: 'https://www.youtube.com/watch?v=WyW_8kMQmJM', initials: 'Lab1', width: 964, height: 450 },
+            { id: 'iframe9', url: 'https://sobralfreenat.github.io/fnw_connect_panel/', initials: 'lab2', width: 1000, height: 900 },
+            { id: 'iframe5', url: 'https://ai.invideo.io/workspace/d68a9be3-5cb3-425f-b79a-c07e9e9bebbf/v20-copilot', initials: 'AI', width: 1000, height: 500 }
         ];
 
         function adjustSize(iframeId) {
@@ -180,9 +181,10 @@
                 window.addEventListener('mouseup', stopDrag);
             });
 
-            function drag(e) {
-                element.style.left = e.clientX - offsetX + 'px';
-                element.style.top = e.clientY - offsetY + 'px';
+          
+          function drag(e) {
+                // element.style.left = e.clientX - offsetX + 'px';
+              //  element.style.top = e.clientY - offsetY + 'px';
             }
 
             function stopDrag() {
@@ -324,8 +326,8 @@
 
     <label for="general-width-slider">Ajustar Largura Geral:</label>
     <input type="range" id="general-width-slider" min="100" max="1000" value="400" oninput="adjustGeneralWidth(this.value)">
-    <span id="general-width-value">400</span> px
-
+    <span id="general-width-value">385</span> px
+<br>
     <div class="anchor-buttons">
         <h3>Stack Tools</h3>
         <button onclick="updateIframes()">Atualizar Iframes</button>
@@ -445,4 +447,3 @@
     </div>
 </body>
 </html>
-
