@@ -12,36 +12,23 @@
             color: #333;
         }
         .iframe-container {
-           	margin-top: 50px;
-			margin-bottom: 20px;
+            margin-top: 20px;
             position: relative;
-            cursor: move;
             display: inline-block;
             border: 1px solid #ddd;
             border-radius: 8px;
             background-color: #ffffff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 100vw;
-            height: 500px;
+            overflow: hidden;
+            resize: both;
+            width: 400px;
+            height: 300px;
         }
         iframe {
             width: 100%;
             height: 100%;
             border: none;
             border-radius: 8px;
-        }
-        .iframe-selected {
-            border: 2px solid #007BFF;
-        }
-        .resizer {
-            width: 10px;
-            height: 10px;
-            background: #007BFF;
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            cursor: se-resize;
         }
         .controls {
             margin-top: 10px;
@@ -71,18 +58,14 @@
             background-color: #0056b3;
             transform: scale(1.05);
         }
+        .input-field {
+            margin-bottom: 15px;
+        }
     </style>
     <script>
         let sites = [
             { id: 'iframe1', url: 'https://sobralfreenat.github.io/FNW_MAE/', initials: 'Decoder', width: 374, height: 900 },
-            { id: 'iframe3', url: 'https://sobralfreenat.github.io/desafios_e_temas_prompt_text/', initials: 'Desafio', width: 440, height: 500 },
-            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'Encoder', width: 500, height: 500 },
-            { id: 'iframe4', url: 'https://sobralfreenat.github.io/mae-menu-editor/', initials: 'Editor', width: 314, height: 900 },
-            { id: 'iframe6', url: 'https://fnw-assessoria-digital1.odoo.com/', initials: 'FNW Site', width: 995, height: 450 },
-            { id: 'iframe7', url: 'https://freenat-doc.systeme.io/aducation-migrar-assessoria', initials: 'Assessoria1', width: 374, height: 900 },
-            { id: 'iframe8', url: 'https://www.youtube.com/watch?v=WyW_8kMQmJM', initials: 'Lab1', width: 964, height: 450 },
-            { id: 'iframe9', url: 'https://sobralfreenat.github.io/fnw_connect_panel/', initials: 'lab2', width: 1000, height: 900 },
-            { id: 'iframe5', url: 'https://ai.invideo.io/workspace/d68a9be3-5cb3-425f-b79a-c07e9e9bebbf/v20-copilot', initials: 'AI', width: 1000, height: 500 }
+            { id: 'iframe2', url: 'https://sobralfreenat.github.io/mae_prompt_generator/', initials: 'Encoder', width: 500, height: 500 }
         ];
 
         function adjustSize(iframeId) {
@@ -93,7 +76,7 @@
             iframe.style.height = height + 'px';
         }
 
-        function adjustGeneralWidth(value) {
+        function adjustAllSizes(value) {
             document.getElementById('general-width-value').textContent = value;
             sites.forEach(site => {
                 document.getElementById(site.id + '-width').value = value;
@@ -118,8 +101,7 @@
                 width: document.getElementById(site.id + '-width').value,
                 height: document.getElementById(site.id + '-height').value
             }));
-            const generalWidth = document.getElementById('general-width-slider').value;
-            const json = JSON.stringify({ sites: data, generalWidth: generalWidth });
+            const json = JSON.stringify(data);
             const blob = new Blob([json], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -134,10 +116,8 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const result = JSON.parse(e.target.result);
-                    sites = result.sites;
+                    sites = JSON.parse(e.target.result);
                     updateIframes();
-                    adjustGeneralWidth(result.generalWidth);
                     updateMenu();
                 };
                 reader.readAsText(file);
@@ -156,13 +136,10 @@
             });
 
             function resize(e) {
-                const iframe = element.querySelector('iframe');
                 const newWidth = e.clientX - element.getBoundingClientRect().left;
                 const newHeight = e.clientY - element.getBoundingClientRect().top;
-                iframe.style.width = newWidth + 'px';
-                iframe.style.height = newHeight + 'px';
-                document.getElementById(element.id + '-width').value = newWidth;
-                document.getElementById(element.id + '-height').value = newHeight;
+                element.style.width = newWidth + 'px';
+                element.style.height = newHeight + 'px';
             }
 
             function stopResize() {
@@ -181,10 +158,9 @@
                 window.addEventListener('mouseup', stopDrag);
             });
 
-          
-          function drag(e) {
-                // element.style.left = e.clientX - offsetX + 'px';
-              //  element.style.top = e.clientY - offsetY + 'px';
+            function drag(e) {
+                element.style.left = e.clientX - offsetX + 'px';
+                element.style.top = e.clientY - offsetY + 'px';
             }
 
             function stopDrag() {
@@ -207,64 +183,18 @@
                 iframe.style.width = site.width + 'px';
                 iframe.style.height = site.height + 'px';
 
-                const controls = document.createElement('div');
-                controls.className = 'controls';
-
-                const widthInput = document.createElement('input');
-                widthInput.type = 'number';
-                widthInput.id = `${site.id}-width`;
-                widthInput.value = site.width;
-                widthInput.onchange = () => {
-                    adjustSize(site.id);
-                    iframe.style.width = widthInput.value + 'px';
-                };
-                controls.appendChild(document.createTextNode('Largura (px):'));
-                controls.appendChild(widthInput);
-                controls.appendChild(document.createElement('br'));
-
-                const heightInput = document.createElement('input');
-                heightInput.type = 'number';
-                heightInput.id = `${site.id}-height`;
-                heightInput.value = site.height;
-                heightInput.onchange = () => adjustSize(site.id);
-                controls.appendChild(document.createTextNode('Altura (px):'));
-                controls.appendChild(heightInput);
-                controls.appendChild(document.createElement('br'));
-
-                const display = document.createElement('span');
-                display.id = `${site.id}-display`;
-                display.textContent = site.initials;
-                controls.appendChild(display);
-
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Editar';
-                editButton.onclick = () => editSite(site.id);
-                controls.appendChild(editButton);
-
                 iframeContainer.appendChild(iframe);
-                iframeContainer.appendChild(controls);
-                container.appendChild(iframeContainer);
-
                 makeResizable(iframeContainer);
                 makeDraggable(iframeContainer);
+                container.appendChild(iframeContainer);
             });
         }
 
-        function editSite(id) {
-            const site = sites.find(site => site.id === id);
-            const newUrl = prompt('Digite a nova URL:', site.url);
-            const newInitials = prompt('Digite a nova síntese do nome:', site.initials);
-            
-            if (newUrl) site.url = newUrl;
-            if (newInitials) site.initials = newInitials;
-
-            updateIframes();
-            updateMenu();
-        }
-
-        function addSite(url, initials) {
+        function addSite() {
+            const url = document.getElementById('new-url').value;
+            const initials = document.getElementById('new-initials').value;
             const newId = `iframe${sites.length + 1}`;
-            sites.push({ id: newId, url: url, initials: initials, width: 400, height: 500 });
+            sites.push({ id: newId, url: url, initials: initials, width: 400, height: 300 });
             updateIframes();
             updateMenu();
         }
@@ -274,176 +204,39 @@
             menu.innerHTML = '<h3>Stack Tools</h3>';
             sites.forEach(site => {
                 const button = document.createElement('button');
-                button.textContent = `Ir para ${site.initials}`;
-                button.onclick = () => {
-                    highlightIframe(site.id);
-                    const iframe = document.getElementById(site.id);
-                    iframe.scrollIntoView({ behavior: 'smooth' });
-                };
+                button.textContent = site.initials;
+                button.addEventListener('click', () => highlightIframe(site.id));
                 menu.appendChild(button);
             });
-            const addButton = document.createElement('button');
-            addButton.textContent = 'Adicionar Página';
-            addButton.onclick = () => {
-                const url = prompt('Digite a URL da nova página:');
-                const initials = prompt('Digite a síntese do nome:');
-                if (url && initials) {
-                    addSite(url, initials);
-                }
-            };
-            menu.appendChild(addButton);
-            const saveButton = document.createElement('button');
-            saveButton.textContent = 'Salvar Dados';
-            saveButton.onclick = saveData;
-            menu.appendChild(saveButton);
-            const loadButton = document.createElement('button');
-            loadButton.textContent = 'Carregar Dados';
-            loadButton.onclick = () => document.getElementById('file-input').click();
-            menu.appendChild(loadButton);
         }
 
         window.onload = function() {
             updateIframes();
             updateMenu();
-            sites.forEach(site => {
-                const container = document.getElementById(site.id).parentElement;
-                makeResizable(container);
-                makeDraggable(container);
-            });
-            makeDraggable(document.querySelector('.anchor-buttons'));
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.id = 'file-input';
-            fileInput.style.display = 'none';
-            fileInput.accept = '.json';
-            fileInput.addEventListener('change', loadData);
-            document.body.appendChild(fileInput);
         };
     </script>
 </head>
 <body>
-    <h1>Sites Embebidos com Stack Tools</h1>
+    <div id="iframe-container"></div>
 
-    <label for="general-width-slider">Ajustar Largura Geral:</label>
-    <input type="range" id="general-width-slider" min="100" max="1000" value="400" oninput="adjustGeneralWidth(this.value)">
-    <span id="general-width-value">385</span> px
-<br>
-    <div class="anchor-buttons">
-        <h3>Stack Tools</h3>
-        <button onclick="updateIframes()">Atualizar Iframes</button>
-        <button onclick="saveData()">Salvar Dados</button>
-        <button onclick="document.getElementById('file-input').click()">Carregar Dados</button>
-        <button onclick="addSite(prompt('Digite a URL da nova página:'), prompt('Digite a síntese do nome:'))">Adicionar Página</button>
+    <div class="controls">
+        <input type="file" accept=".json" onchange="loadData(event)">
+        <button onclick="saveData()">Salvar Estado</button>
     </div>
 
-    <div id="iframe-container" class="vertical">
-        <div class="iframe-container" id="site1">
-            <iframe id="iframe1" src="https://sobralfreenat.github.io/FNW_MAE/" title="Site 1"></iframe>
-            <div class="controls">
-                <label for="iframe1-width">Largura (px):</label>
-                <input type="number" id="iframe1-width" value="400" onchange="adjustSize('iframe1')"><br>
-                <label for="iframe1-height">Altura (px):</label>
-                <input type="number" id="iframe1-height" value="500" onchange="adjustSize('iframe1')"><br>
-                <span id="iframe1-display">FN</span>
-                <button onclick="editSite('iframe1')">Editar</button>
-            </div>
-        </div>
+    <div class="anchor-buttons">
+        <h3>Stack Tools</h3>
+    </div>
 
-        <div class="iframe-container" id="site3">
-            <iframe id="iframe3" src="https://sobralfreenat.github.io/desafios_e_temas_prompt_text/" title="Site 3"></iframe>
-            <div class="controls">
-                <label for="iframe3-width">Largura (px):</label>
-                <input type="number" id="iframe3-width" value="400" onchange="adjustSize('iframe3')"><br>
-                <label for="iframe3-height">Altura (px):</label>
-                <input type="number" id="iframe3-height" value="500" onchange="adjustSize('iframe3')"><br>
-                <span id="iframe3-display">DT</span>
-                <button onclick="editSite('iframe3')">Editar</button>
-            </div>
-        </div>
+    <div class="input-field">
+        <input type="text" id="new-url" placeholder="Nova URL">
+        <input type="text" id="new-initials" placeholder="Nome da página">
+        <button onclick="addSite()">Adicionar Página</button>
+    </div>
 
-        <div class="iframe-container" id="site2">
-            <iframe id="iframe2" src="https://sobralfreenat.github.io/mae_prompt_generator/" title="Site 2"></iframe>
-            <div class="controls">
-                <label for="iframe2-width">Largura (px):</label>
-                <input type="number" id="iframe2-width" value="400" onchange="adjustSize('iframe2')"><br>
-                <label for="iframe2-height">Altura (px):</label>
-                <input type="number" id="iframe2-height" value="500" onchange="adjustSize('iframe2')"><br>
-                <span id="iframe2-display">MG</span>
-                <button onclick="editSite('iframe2')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site4">
-            <iframe id="iframe4" src="https://sobralfreenat.github.io/mae-menu-editor/" title="Site 4"></iframe>
-            <div class="controls">
-                <label for="iframe4-width">Largura (px):</label>
-                <input type="number" id="iframe4-width" value="400" onchange="adjustSize('iframe4')"><br>
-                <label for="iframe4-height">Altura (px):</label>
-                <input type="number" id="iframe4-height" value="500" onchange="adjustSize('iframe4')"><br>
-                <span id="iframe4-display">ME</span>
-                <button onclick="editSite('iframe4')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site6">
-            <iframe id="iframe6" src="https://example.com/site1" title="Site 6"></iframe>
-            <div class="controls">
-                <label for="iframe6-width">Largura (px):</label>
-                <input type="number" id="iframe6-width" value="400" onchange="adjustSize('iframe6')"><br>
-                <label for="iframe6-height">Altura (px):</label>
-                <input type="number" id="iframe6-height" value="500" onchange="adjustSize('iframe6')"><br>
-                <span id="iframe6-display">S1</span>
-                <button onclick="editSite('iframe6')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site7">
-            <iframe id="iframe7" src="https://example.com/site2" title="Site 7"></iframe>
-            <div class="controls">
-                <label for="iframe7-width">Largura (px):</label>
-                <input type="number" id="iframe7-width" value="400" onchange="adjustSize('iframe7')"><br>
-                <label for="iframe7-height">Altura (px):</label>
-                <input type="number" id="iframe7-height" value="500" onchange="adjustSize('iframe7')"><br>
-                <span id="iframe7-display">S2</span>
-                                <button onclick="editSite('iframe7')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site8">
-            <iframe id="iframe8" src="https://example.com/site3" title="Site 8"></iframe>
-            <div class="controls">
-                <label for="iframe8-width">Largura (px):</label>
-                <input type="number" id="iframe8-width" value="400" onchange="adjustSize('iframe8')"><br>
-                <label for="iframe8-height">Altura (px):</label>
-                <input type="number" id="iframe8-height" value="500" onchange="adjustSize('iframe8')"><br>
-                <span id="iframe8-display">S3</span>
-                <button onclick="editSite('iframe8')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site9">
-            <iframe id="iframe9" src="https://example.com/site4" title="Site 9"></iframe>
-            <div class="controls">
-                <label for="iframe9-width">Largura (px):</label>
-                <input type="number" id="iframe9-width" value="400" onchange="adjustSize('iframe9')"><br>
-                <label for="iframe9-height">Altura (px):</label>
-                <input type="number" id="iframe9-height" value="500" onchange="adjustSize('iframe9')"><br>
-                <span id="iframe9-display">S4</span>
-                <button onclick="editSite('iframe9')">Editar</button>
-            </div>
-        </div>
-
-        <div class="iframe-container" id="site5">
-            <iframe id="iframe5" src="https://ai.invideo.io/workspace/d68a9be3-5cb3-425f-b79a-c07e9e9bebbf/v20-copilot" title="Site AI"></iframe>
-            <div class="controls">
-                <label for="iframe5-width">Largura (px):</label>
-                <input type="number" id="iframe5-width" value="400" onchange="adjustSize('iframe5')"><br>
-                <label for="iframe5-height">Altura (px):</label>
-                <input type="number" id="iframe5-height" value="500" onchange="adjustSize('iframe5')"><br>
-                <span id="iframe5-display">AI</span>
-                <button onclick="editSite('iframe5')">Editar</button>
-            </div>
-        </div>
+    <div>
+        <input type="range" min="100" max="1200" value="400" id="general-width" oninput="adjustAllSizes(this.value)">
+        <span id="general-width-value">400</span> px
     </div>
 </body>
 </html>
